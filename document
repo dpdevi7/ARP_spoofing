@@ -1,0 +1,48 @@
+>>> import scapy.all as scapy
+>>> r = scapy.ARP()
+>>> scapy.ls(r)
+hwtype     : XShortField                         = 1               (1)
+ptype      : XShortEnumField                     = 2048            (2048)
+hwlen      : ByteField                           = 6               (6)
+plen       : ByteField                           = 4               (4)
+op         : ShortEnumField                      = 1               (1)
+hwsrc      : ARPSourceMACField                   = '00:0c:29:a3:97:a3' (None)
+psrc       : SourceIPField                       = '192.168.11.142' (None)
+hwdst      : MACField                            = '00:00:00:00:00:00' ('00:00:00:00:00:00')
+pdst       : IPField                             = '0.0.0.0'       ('0.0.0.0')
+>>> r = scapy.Ether()
+>>> scapy.ls(r)
+dst        : DestMACField                        = 'ff:ff:ff:ff:ff:ff' (None)
+src        : SourceMACField                      = '00:0c:29:a3:97:a3' (None)
+type       : XShortEnumField                     = 36864           (36864)
+>>> r.show()
+###[ Ethernet ]### 
+  dst       = ff:ff:ff:ff:ff:ff
+  src       = 00:0c:29:a3:97:a3
+  type      = 0x9000
+
+>>> r = scapy.ARP()
+>>> r.show()
+###[ ARP ]### 
+  hwtype    = 0x1
+  ptype     = 0x800
+  hwlen     = 6
+  plen      = 4
+  op        = who-has
+  hwsrc     = 00:0c:29:a3:97:a3
+  psrc      = 192.168.11.142
+  hwdst     = 00:00:00:00:00:00
+  pdst      = 0.0.0.0
+
+>>> r = scapy.ARP(op=2)
+>>> r.show()
+###[ ARP ]### 
+  hwtype    = 0x1
+  ptype     = 0x800
+  hwlen     = 6
+  plen      = 4
+  op        = is-at
+  hwsrc     = 00:0c:29:a3:97:a3
+  psrc      = 192.168.11.142
+  hwdst     = 00:00:00:00:00:00
+  pdst      = 0.0.0.0
