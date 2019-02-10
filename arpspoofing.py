@@ -1,5 +1,5 @@
 import scapy.all as scapy
-import time
+import time,subprocess
 
 
 def scan_network():
@@ -41,6 +41,7 @@ def show_targets(target_dictionary):
 
 
 if __name__ == '__main__':
+    subprocess.call("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True)
     target_dictionary = {}
     scan_network()
     show_targets(target_dictionary)
